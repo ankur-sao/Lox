@@ -84,7 +84,27 @@ class Scanner
             case '/' :
                 if (match('/')){
                     while(peek() != '\n' && !isAtEnd()) advance();
-                } else {
+                } else if (match('*')){
+                    // increase count for each /* , and decrease for each */ break from here once count is 0.
+                    int lOpen = 1 ;
+                    while (lOpen != 0 && !isAtEnd())
+                    {
+                        if (peek() == '/' && peekNext() == '*')
+                        {
+                            lOpen++ ;
+                            advance();
+                        }
+                        else if (peek() == '*' && peekNext() == '/')
+                        {
+                            lOpen--;
+                            advance();
+                        }
+                        if (peek() == '\n') line++;
+                        advance();
+                    }
+                    if (isAtEnd() && lOpen !=0 ) Lox.error(line, "Nested comments are not terminated");
+                }
+                else {
                     addToken(SLASH);
                 }
                 break;
@@ -102,9 +122,10 @@ class Scanner
                     number();
                 } else if (isAlpha(c)){
                     identifier();
-                }
+                } else {
 
-                Lox.error(line, "Unexpected character.");
+                    Lox.error(line, "Unexpected character.");
+                }
         }
     }
     private char advance()

@@ -18,6 +18,12 @@ class RpnPrinter implements Expr.Visitor<String>{
     }
 
     @Override
+    public String visitVariableExpr (Expr.Variable expr){return parenthesize(expr.name.lexeme);}
+
+    @Override
+    public String visitAssignExpr (Expr.Assign expr) {return parenthesize(expr.name.lexeme, expr.Value);}
+
+    @Override
     public String visitLiteralExpr(Expr.Literal expr){
         if (expr.value == null) return "nil";
         return expr.value.toString();

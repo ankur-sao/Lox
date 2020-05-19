@@ -5,7 +5,7 @@ import java.util.List;
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
     private Environment environment =  new Environment();
 
-    void interpret (List<Stmt> statements ){
+    void interpret (List<Stmt> statements){
         try{
             for (Stmt statement: statements){
                 execute(statement);
@@ -42,6 +42,27 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
         return  null;
     }
 
+    /*  Bob Nystrom doesn't like braces for if and else block and  therefore allows writing ambiguous
+        code like this one:
+        if  (condition1) if (condition2) else doSomething();
+        Ambiguity is called dangling-else. We dont know second else was intended for which if.
+
+        Following Go's style, I am enforcing braces for if and else. Code readability is important for me.
+        Although Go also enforces that you can't start if block from the same line as if keyword.
+        I dont have this restriction.
+
+    * */
+
+    @Override
+    public Void visitIfStmt(Stmt.If ifStmt){
+          Object value  = evaluate(ifStmt.expr);
+          if (isTruthy(value)){
+              executeBlockStmt(ifStmt.ifBlock.statements, new Environment(environment));
+          } else if (ifStmt.elseBlock != null){
+              executeBlockStmt(ifStmt.elseBlock.statements, new Environment(environment));
+          }
+          return null;
+    }
 
     private void executeBlockStmt(List<Stmt> stmt, Environment environment){
         Environment previous = this.environment;
@@ -187,6 +208,19 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
     public Object visitVariableExpr(Expr.Variable expr){
         return environment.get(expr.name);
     }
+
+    @Override
+    public Object visitLogicalExpr(Expr.Logical  expr){
+        Object leftValue  = evaluate(expr.left);
+
+        if (expr.operator.type == TokenType.OR){
+             if (isTruthy(leftValue)) return leftValue;
+        }else{
+            if (!isTruthy(leftValue)) return leftValue;
+        }
+        return evaluate(expr.right);
+    }
+
     /*
      Q:Why do we have Expr subclass variable?
      A:While evaluating an expression, sometimes operands might be literals, sometimes  it might be variables.
@@ -196,7 +230,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt){
-            evaluate(stmt.expression);
+            Object value = evaluate(stmt.expression);
+            //System.out.println(Stringify(value));
+
             return null;
     }
 
@@ -216,6 +252,14 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 
             environment.define(stmt.name.lexeme,  value);
             return null;
+    }
+
+    @Override
+    public Void visitWhileStmt(Stmt.While stmt){
+         while(isTruthy(evaluate(stmt.condition))){
+             execute(stmt.body);
+         }
+        return null;
     }
 
     private void checkNumberOperand(Token operator, Object rightValue){

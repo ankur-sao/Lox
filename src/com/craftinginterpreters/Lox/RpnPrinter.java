@@ -24,6 +24,11 @@ class RpnPrinter implements Expr.Visitor<String>{
     public String visitAssignExpr (Expr.Assign expr) {return parenthesize(expr.name.lexeme, expr.Value);}
 
     @Override
+    public String visitLogicalExpr(Expr.Logical expr){
+        return parenthesize(expr.operator.lexeme, expr.left, expr.right);
+    }
+
+    @Override
     public String visitLiteralExpr(Expr.Literal expr){
         if (expr.value == null) return "nil";
         return expr.value.toString();

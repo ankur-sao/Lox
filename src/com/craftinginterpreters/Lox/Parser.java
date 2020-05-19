@@ -2,6 +2,8 @@ package com.craftinginterpreters.Lox;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+
 
 import static  com.craftinginterpreters.Lox.TokenType.*;
 
@@ -37,7 +39,7 @@ class Parser{
             }
             return statement();
         } catch(ParseError error){
-            System.out.println("Caught E in declaration");
+            System.out.println("Caught Execption in declaration [parsing]");
             synchronize();
             return null;
         }
@@ -59,16 +61,104 @@ class Parser{
         if (match(PRINT)) {
             return printStatement();
         }
+        if (match(IF)){
+            return  ifStatement();
+        }
+        if  (match(JABTAK)){
+            return whileStatement();
+        }
         if (match(LEFT_BRACE)){
             return  new Stmt.Block(block());
         }
+        if (match(FIRSE)){
+            return forStatement();
+        }
         return expressionStatement();
+    }
+
+    // Instead of consuming ( and ) saparately here, can we just consume a grouping expression?
+    // bolo! bolo! bolo!
+
+    private Stmt whileStatement(){
+        consume(LEFT_PAREN, "Expect '(' after while");
+        Expr condition  = expression();
+        consume(RIGHT_PAREN, "Expect ')' after expression");
+
+        Stmt body = statement();
+
+        return new Stmt.While(condition,body);
+    }
+
+    private Stmt forStatement(){
+        consume(LEFT_PAREN, "Expect '(' after for");
+
+        Stmt initializer;
+        if (match(SEMICOLON)){
+            initializer  = null;
+        }else if (match(VAR)) {
+            initializer = varDeclaration();
+        }else{
+            initializer = expressionStatement();
+        }
+
+        Expr condition;
+        if (match(SEMICOLON)){
+            condition = null;
+        }else{
+            condition =  expression();
+            consume(SEMICOLON, "Expect ';' after for loop condition.");
+        }
+
+        Expr increment;
+        if (match(SEMICOLON)){
+            increment = null;
+        }else{
+            increment = expression();
+        }
+        consume(RIGHT_PAREN,"Expect ')' after for statements.");
+
+
+        List<Stmt> lBodyStmts = new ArrayList<> ();
+
+        Stmt body = statement();
+        lBodyStmts.add(body);
+
+        if (increment != null) lBodyStmts.add(new Stmt.Expression(increment));
+
+        // body and increment will be combined to form a new block statement.
+
+        Stmt modifiedBody = new Stmt.Block(lBodyStmts);
+
+        Stmt.While lWhileStmt = new Stmt.While(condition, modifiedBody);
+
+        List<Stmt> lStmts = new ArrayList<> ();
+        if (initializer  != null) lStmts.add(initializer);
+        lStmts.add(lWhileStmt);
+
+        return new Stmt.Block(lStmts);
+    }
+
+    private Stmt ifStatement(){
+        consume (LEFT_PAREN, "'(' missing after if");
+        Expr expr = expression();
+        consume (RIGHT_PAREN, "')' missing after expression in if");
+        consume(LEFT_BRACE, "if block should start with a '{'");
+
+        Stmt.Block ifBlock = new Stmt.Block(block());
+        Stmt.Block elseBlock  = null;
+
+        if (match(ELSE)){
+            consume(LEFT_BRACE, "else block should start with a '{'");
+            elseBlock = new Stmt.Block(block());
+        }
+
+        return new Stmt.If(expr, ifBlock, elseBlock);
     }
 
     private  List<Stmt> block(){
         List<Stmt> statements  = new ArrayList<>();
 
-        while(!check(RIGHT_BRACE)){
+        while(!check(RIGHT_BRACE) && !isAtEnd()){
             statements.add(declaration());
         }
 
@@ -93,7 +183,7 @@ class Parser{
     }
 
     private Expr assignment(){
-        Expr expr = equality();
+        Expr expr = logical_or();
 
         if (match(EQUAL)){
             Token name = ((Expr.Variable)expr).name;
@@ -105,6 +195,28 @@ class Parser{
             error(name, "Invalid assignment  target");
         }
 
+        return expr;
+    }
+
+    private Expr logical_or(){
+        Expr expr = logical_and();
+
+        while(match(OR)){
+            Token operator = previous();
+            Expr right = logical_and();
+            expr = new Expr.Logical(operator, expr, right);
+        }
+        return  expr;
+    }
+
+    private Expr logical_and(){
+        Expr expr = equality();
+
+        while(match(AND)){
+            Token operator  = previous();
+            Expr right = equality();
+            expr = new Expr.Logical(operator, expr, right);
+        }
         return expr;
     }
 
@@ -237,9 +349,9 @@ class Parser{
                 case CLASS:
                 case FUN:
                 case VAR:
-                case FOR:
+                case FIRSE:
                 case IF:
-                case WHILE:
+                case JABTAK:
                 case PRINT:
                 case RETURN:
                     return;

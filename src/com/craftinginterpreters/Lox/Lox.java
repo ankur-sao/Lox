@@ -1,6 +1,5 @@
 package com.craftinginterpreters.Lox;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -81,10 +80,14 @@ public class Lox {
   }
 
     static void runtimeError(RuntimeError error){
-        System.out.println(error.getMessage() +
+        System.err.println(error.getMessage() +
         "\n [line " + error.token.line + " ]");
         hadRuntimeError = true;
     }
 
 
 }
+
+/* Naive set theory 's Rusell's paradox.
+Naive set theory by Paul R Halmos is a good humurous read.
+*/

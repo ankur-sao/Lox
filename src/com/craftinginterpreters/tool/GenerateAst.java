@@ -19,14 +19,17 @@ public class GenerateAst{
                 "Unary     : Token operator, Expr right",
                 "Literal   : Object value",
                 "Variable  : Token name",
-                "Assign    : Token name, Expr Value"
+                "Assign    : Token name, Expr Value",
+                "Logical   : Token operator, Expr left, Expr right"
         ));
 
         defineAst(outputDir, "Stmt", Arrays.asList(
                 "Expression : Expr expression",
                 "Print : Expr expression",
                 "Var: Token name, Expr initializer",
-                "Block: List<Stmt> statements"
+                "Block: List<Stmt> statements",
+                "If: Expr expr, Stmt.Block ifBlock, Stmt.Block elseBlock",
+                "While : Expr condition, Stmt body"
         ));
     }
 

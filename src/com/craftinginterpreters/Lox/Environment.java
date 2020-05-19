@@ -27,14 +27,21 @@ class Environment{
     Object get(Token name){
         //Token should be  an identifier
         if (values.containsKey(name.lexeme)){
-            return values.get(name.lexeme);
+            Object value = values.get(name.lexeme);
+            if (value  == null) {
+                throw new RuntimeError(name,
+                        "[RuntimeError] Uninitialized variable '"+ name.lexeme+"'.");
+            }else{
+                return value;
+            }
+
         }
 
         if (null != enclosing){
             return enclosing.get(name);
         }
         throw new RuntimeError(name,
-                "Undefined variable name '" + name.lexeme + "'.");
+                "[RuntimeError] Undefined variable name '" + name.lexeme + "'.");
     }
 
     void assign(Token name, Object value){
@@ -45,9 +52,10 @@ class Environment{
 
         if (null != enclosing){
             enclosing.assign(name, value);
+            return;
         }
         throw new RuntimeError(name,
-                "Undefine variable '" + name.lexeme + "'.");
+                "[Assign] Undefined variable '" + name.lexeme + "'.");
     }
 
 

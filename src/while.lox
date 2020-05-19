@@ -1,0 +1,9 @@
+
+
+   print "----program to print all even number  less than 50";
+
+   for (var b  =1; b<26; b=b+1)
+   {
+        print b*2+1;
+	
+   }

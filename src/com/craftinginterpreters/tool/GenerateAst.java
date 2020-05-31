@@ -20,7 +20,9 @@ public class GenerateAst{
                 "Literal   : Object value",
                 "Variable  : Token name",
                 "Assign    : Token name, Expr Value",
-                "Logical   : Token operator, Expr left, Expr right"
+                "Logical   : Token operator, Expr left, Expr right",
+                "call      : Expr callee, Token paren, List<Expr> Arguments"
+
         ));
 
         defineAst(outputDir, "Stmt", Arrays.asList(
@@ -29,7 +31,9 @@ public class GenerateAst{
                 "Var: Token name, Expr initializer",
                 "Block: List<Stmt> statements",
                 "If: Expr expr, Stmt.Block ifBlock, Stmt.Block elseBlock",
-                "While : Expr condition, Stmt body"
+                "While : Expr condition, Stmt body",
+                "Break : Stmt destBlock",
+                "Function  : Token name, List<Token> params, List<Stmt> body"
         ));
     }
 

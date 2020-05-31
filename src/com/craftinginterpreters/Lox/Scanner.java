@@ -38,6 +38,7 @@ class Scanner
         keywords.put("true", TRUE);
         keywords.put("var", VAR);
         keywords.put("jabtak", JABTAK);
+        keywords.put("break", BREAK);
     }
 
     Scanner(String aInSource)

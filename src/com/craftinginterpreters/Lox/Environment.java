@@ -4,8 +4,9 @@ import java.util.Map;
 import java.util.HashMap;
 
 /*
-*  Q: Environement class get api is by Token, and define api is by String, why?
-*  A:
+*  Q: Environement class get api is by Token, and define api is by String, why? GET api
+*     can also be made to take String input.
+*  A: To be able to define many native functions in global scope with values being a callable object.
 * */
 
 class Environment{

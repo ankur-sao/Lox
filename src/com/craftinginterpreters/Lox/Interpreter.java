@@ -1,9 +1,12 @@
 package com.craftinginterpreters.Lox;
 
 import java.util.List;
+import java.util.ArrayList;
+
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
-    private Environment environment =  new Environment();
+    final Environment globals = new Environment();
+    private Environment environment =  globals;
 
     void interpret (List<Stmt> statements){
         try{
@@ -15,6 +18,22 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
         }
     }
 
+    Interpreter() {
+        globals.define("clock", new SLoxCallable(){
+            @Override
+            public int arity(){return 0;}
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return  (double)System.currentTimeMillis()/1000;
+            }
+
+            @Override
+            public String toString(){
+                return "Native function<>";
+            }
+        });
+    }
     private void execute(Stmt statement){
         statement.accept(this);
     }
@@ -36,10 +55,21 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
         return value;
     }
 
+    /*
+    Two ways to execute a  block  stmt, either call visitBlockStmt(Stmt.Block) or call
+    executeBlockStmt(List<Stmt>, newEnvironment())
+    */
+
     @Override
     public Void visitBlockStmt(Stmt.Block stmt){
         executeBlockStmt(stmt.statements, new Environment(environment));
         return  null;
+    }
+
+    @Override
+    public visitFunctionStmt(Stmt.Function stmt){
+        //var IDFR ( params? ) body
+        // SLoxCallable object and assign it to the value in globals.
     }
 
     /*  Bob Nystrom doesn't like braces for if and else block and  therefore allows writing ambiguous
@@ -64,7 +94,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
           return null;
     }
 
-    private void executeBlockStmt(List<Stmt> stmt, Environment environment){
+   public void executeBlockStmt(List<Stmt> stmt, Environment environment){
         Environment previous = this.environment;
         try {
             this.environment = environment;
@@ -204,6 +234,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
         return  null;
     }
 
+    /*
+    * It visitVariableExpr knows that the this.enivronment is the local scope with reference
+    * to parent scope.
+    */
     @Override
     public Object visitVariableExpr(Expr.Variable expr){
         return environment.get(expr.name);
@@ -219,6 +253,49 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
             if (!isTruthy(leftValue)) return leftValue;
         }
         return evaluate(expr.right);
+    }
+
+    /*
+    * Interpreter has a global environment which is  final. Scopes/environment in function call are treated
+    * just as blocks with access to one global environment.
+    * Any function Callee ultimately is an primary variable defined in global environment with value as
+    * object of a class which implements SLoxCallable function.
+    *
+    * Any user defined function is also a key:value pair in global environment.
+    *
+    * Q: How does a function call works?
+    * A: fun(a)(b)(c) will be parsed to these callees fun(a)(b) with arg c, func(a) with arg b, and finally
+    *    fun with arg a.
+    *
+    *    Every callable variable must implement SLoxCallable interface which has a 'call' api.
+    *
+    *    A variable is callable when its value in global environment is an object of callable interface.
+    *
+    *    Hence a callable variable is evaluated to its callable value whose 'call'  api is invoked, resulting
+    *    in invocation of native/user defined function. This is the beautiful story of how function invocation
+    *    (native/user defined) happens.
+    *
+    * */
+
+    @Override
+    public Object visitCallExpr(Expr.call expr) {
+        Object callee = evaluate(expr.callee);
+
+        List<Object> argumentValues = new ArrayList<>();
+        for(Expr argument: expr.Arguments){
+            argumentValues.add(evaluate(argument));
+        }
+
+        if (!callee instanceof SLoxCallable) {
+            throw new RuntimeError(expr.paren,"only classes and function can be called");
+        }
+        SLoxCallable function = (SLoxCallable) callee;
+
+        if (argumentValues.size() != function.arity()) {
+            throw new RuntimeError(expr.paren, "Expected arguments: " + function.arity() +
+                    ", recieved arguments: " + argumentValues.size());
+        }
+        return function.call(this, argumentValues);
     }
 
     /*
@@ -256,10 +333,19 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 
     @Override
     public Void visitWhileStmt(Stmt.While stmt){
-         while(isTruthy(evaluate(stmt.condition))){
-             execute(stmt.body);
+         try {
+             while (isTruthy(evaluate(stmt.condition))) {
+                 execute(stmt.body);
+             }
+         } catch (RuntimeBreak breakFromLoop){
+             return null;
          }
         return null;
+    }
+
+    @Override
+    public  Void visitBreakStmt(Stmt.Break stmt){
+        throw new RuntimeBreak("Just a break from loop");
     }
 
     private void checkNumberOperand(Token operator, Object rightValue){

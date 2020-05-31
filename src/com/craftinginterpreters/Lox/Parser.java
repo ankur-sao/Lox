@@ -36,10 +36,12 @@ class Parser{
         try{
             if (match(VAR)){
                 return varDeclaration();
+            } else if (match (FUN)) {
+                return functionDeclaration();
             }
             return statement();
         } catch(ParseError error){
-            System.out.println("Caught Execption in declaration [parsing]");
+            System.out.println("Caught Exception in declaration [parsing]");
             synchronize();
             return null;
         }
@@ -55,6 +57,13 @@ class Parser{
         consume(SEMICOLON, "Expect ';'  after variable declaration");
 
         return new Stmt.Var(name, initializer);
+    }
+
+    /*
+    * Following function parses function  declaration and definition.
+    * */
+    private Stmt functionDeclaration(){
+
     }
 
     private Stmt statement(){
@@ -73,12 +82,20 @@ class Parser{
         if (match(FIRSE)){
             return forStatement();
         }
+        if (match(BREAK)){
+            return breakStatement();
+        }
         return expressionStatement();
     }
 
     // Instead of consuming ( and ) saparately here, can we just consume a grouping expression?
-    // bolo! bolo! bolo!
+    // NO, in grouping statement () is optional,  in while it  is mandatory, hence we are consuming
+    // ()  explicitly.
 
+    private Stmt breakStatement(){
+        consume(SEMICOLON,"missing ';' after break;");
+        return new Stmt.Break();
+    }
     private Stmt whileStatement(){
         consume(LEFT_PAREN, "Expect '(' after while");
         Expr condition  = expression();
@@ -304,8 +321,59 @@ class Parser{
             return new Expr.Unary(operator, right);
         }
 
-        return primary();
+        return call();
     }
+
+    // Q: Why does function Stmt class just  contain one block statement  instead of List<Stmt>?
+    // A: We want to consume '{' explicitly and keep the information  that this parsing error occuredd
+    // during  function declaration parsing. Hence we call block(), and not statement(). If we call statement()
+    // It'd give invalid token error, which is not precise.
+
+    /*  Function declaration is parsed as an statement.
+     *  function --> fun IDFR "(" parameters? ")"
+     *  parameters --> IDFR (,IDFR*);
+     *
+     *  Body is a block statement which is convenient.
+     *  When Stmt.function is executed, we'd just define it in the 'global environment' with value
+     *  as a SLoxCallable object and 'call' api would execute function statement's body which is
+     *  block. This is also convenient.
+     *  If we have function and variables in same namespace, writing closures  is similar to
+     *  variable scoping. ??
+     *
+     *  We also pass a String arg to function statement parser so as to differentiate  between  functions
+     *  and class methods.
+     * */
+    private Expr call() {
+        Expr expr = primary();
+
+        //Specifically not using while(match(LEFT_PAREN))
+        while(true){
+            if (match(LEFT_PAREN)) {
+                expr = finishCall(expr);
+            } else {
+                break;
+            }
+        }
+        return expr;
+    }
+
+    private Expr finishCall(Expr callee){
+        List<Expr> arguments = new ArrayList<>();
+
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (arguments.size() >= 254) {
+                    error(peek(), "Cannot accept more than 255 arguments");
+                }
+                arguments.add(expression());
+            } while(match(COMMA));
+        }
+
+        Token paren = consume(RIGHT_PAREN,"Expect ')' after function arguments");
+
+        return new Expr.call(callee, paren, arguments);
+    }
+
 
     private Expr primary(){
         if (match(FALSE)) return new Expr.Literal(false);
@@ -354,6 +422,7 @@ class Parser{
                 case JABTAK:
                 case PRINT:
                 case RETURN:
+                case BREAK:
                     return;
             }
             advance();

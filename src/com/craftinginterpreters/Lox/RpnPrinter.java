@@ -21,6 +21,9 @@ class RpnPrinter implements Expr.Visitor<String>{
     public String visitVariableExpr (Expr.Variable expr){return parenthesize(expr.name.lexeme);}
 
     @Override
+    public String visitcallExpr(Expr.call expr){return "Expr.call rpnPrinter not implemented";}
+
+    @Override
     public String visitAssignExpr (Expr.Assign expr) {return parenthesize(expr.name.lexeme, expr.Value);}
 
     @Override

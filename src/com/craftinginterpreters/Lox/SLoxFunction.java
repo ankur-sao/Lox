@@ -9,11 +9,13 @@ class SLoxFunction implements SLoxCallable{
         declaration  =  stmt;
     }
 
-    int arity(){
+    @Override
+    public int arity(){
         return declaration.params.size();
     }
 
-    Object call (Interpreter interpreter, List<Object> arguments){
+    @Override
+    public Object call (Interpreter interpreter, List<Object> arguments){
         Environment  environment = new Environment (interpreter.globals);
 
         for(int i=0;i<declaration.params.size();i++){

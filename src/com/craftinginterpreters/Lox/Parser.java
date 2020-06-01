@@ -63,6 +63,23 @@ class Parser{
     * Following function parses function  declaration and definition.
     * */
     private Stmt functionDeclaration(){
+        Token name = consume(IDENTIFIERS, "Expect function name after 'fun'");
+        consume(LEFT_PAREN, "Expect '(' after function name");
+
+        List<Token> params = new ArrayList<>();
+        do {
+            if (params.size()>=255){
+                error(peek(),"Function parameters can't be greater than 254");
+            }
+            if (check(IDENTIFIERS)){
+                params.add(advance());
+            }
+        } while(match(COMMA));
+
+        consume(RIGHT_PAREN, "Expect ')' after function parameters");
+        consume(LEFT_BRACE, "Expect '{' before function body starts");
+
+        return new Stmt.Function(name, params, block());
 
     }
 
@@ -93,9 +110,9 @@ class Parser{
     // ()  explicitly.
 
     private Stmt breakStatement(){
-        consume(SEMICOLON,"missing ';' after break;");
-        return new Stmt.Break();
+        throw error(peek(), "Break is not supported .");
     }
+
     private Stmt whileStatement(){
         consume(LEFT_PAREN, "Expect '(' after while");
         Expr condition  = expression();

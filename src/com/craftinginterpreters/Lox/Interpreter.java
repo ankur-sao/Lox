@@ -67,15 +67,16 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
     }
 
     @Override
-    public visitFunctionStmt(Stmt.Function stmt){
-        //var IDFR ( params? ) body
-        // SLoxCallable object and assign it to the value in globals.
+    public Void visitFunctionStmt(Stmt.Function stmt){
+        SLoxFunction sloxFunction = new SLoxFunction(stmt);
+        environment.define(stmt.name.lexeme, sloxFunction);
+        return null;
     }
 
     /*  Bob Nystrom doesn't like braces for if and else block and  therefore allows writing ambiguous
         code like this one:
         if  (condition1) if (condition2) else doSomething();
-        Ambiguity is called dangling-else. We dont know second else was intended for which if.
+        This ambiguity is called dangling-else. We dont know second else was intended for which if.
 
         Following Go's style, I am enforcing braces for if and else. Code readability is important for me.
         Although Go also enforces that you can't start if block from the same line as if keyword.
@@ -106,6 +107,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
             this.environment = previous;
         }
     }
+
 
     @Override
     public Object visitBinaryExpr(Expr.Binary expr){
@@ -278,7 +280,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
     * */
 
     @Override
-    public Object visitCallExpr(Expr.call expr) {
+    public Object visitcallExpr(Expr.call expr) {
         Object callee = evaluate(expr.callee);
 
         List<Object> argumentValues = new ArrayList<>();
@@ -286,9 +288,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
             argumentValues.add(evaluate(argument));
         }
 
-        if (!callee instanceof SLoxCallable) {
+        if (!(callee instanceof SLoxCallable)) {
             throw new RuntimeError(expr.paren,"only classes and function can be called");
         }
+
         SLoxCallable function = (SLoxCallable) callee;
 
         if (argumentValues.size() != function.arity()) {

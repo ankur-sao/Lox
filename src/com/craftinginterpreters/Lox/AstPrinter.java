@@ -24,12 +24,16 @@ class AstPrinter implements Expr.Visitor<String> {
     }
 
     @Override
+    public String visitcallExpr(Expr.call expr){ return  "Expr.call AstPrinter not implemented";}
+
+    @Override
     public String visitAssignExpr(Expr.Assign expr) {return parenthesize(expr.name.lexeme, expr.Value);}
 
     @Override
     public String visitLogicalExpr(Expr.Logical expr) {
         return parenthesize(expr.operator.lexeme, expr.left, expr.right);
     }
+
 
     @Override
     public String visitLiteralExpr(Expr.Literal expr){

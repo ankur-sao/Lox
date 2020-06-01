@@ -104,7 +104,8 @@ static  class Break extends Stmt {
     }
 
     final Stmt destBlock;
-} 
+}
+
 static  class Function extends Stmt {
   Function ( Token name, List<Token> params, List<Stmt> body  ) {
     this.name = name;

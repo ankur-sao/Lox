@@ -102,15 +102,34 @@ class Parser{
         if (match(BREAK)){
             return breakStatement();
         }
+        if (match(RETURN)){
+            return returnStmt();
+        }
         return expressionStatement();
     }
 
-    // Instead of consuming ( and ) saparately here, can we just consume a grouping expression?
+    // Instead of consuming ( and ) separately here, can we just consume a grouping expression?
     // NO, in grouping statement () is optional,  in while it  is mandatory, hence we are consuming
     // ()  explicitly.
 
     private Stmt breakStatement(){
         throw error(peek(), "Break is not supported .");
+    }
+
+    /*  Return actually can be put anywhere unlike break. Since if 'return' is not inside any function,
+    * it'd mean, you are terminating your SLox program.
+    * */
+    private Stmt returnStmt(){
+        Token keyword;
+        Expr expr = null;
+        keyword = previous();
+
+        if (!check(SEMICOLON)){
+            expr = expression();
+        }
+        consume(SEMICOLON,"Expect ';' after return statement");
+
+        return new Stmt.Return(keyword, expr);
     }
 
     private Stmt whileStatement(){
@@ -410,7 +429,7 @@ class Parser{
         if (match(IDENTIFIERS)){
             return new Expr.Variable(previous());
         }
-        throw error(peek(), "Unexpected character/symbol .");
+        throw error(peek(), "Unexpected symbol during parsing.");
     }
 
     private Token consume(TokenType type, String message){

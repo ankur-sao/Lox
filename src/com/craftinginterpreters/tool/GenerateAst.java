@@ -33,7 +33,8 @@ public class GenerateAst{
                 "If: Expr expr, Stmt.Block ifBlock, Stmt.Block elseBlock",
                 "While : Expr condition, Stmt body",
                 "Break : Stmt destBlock",
-                "Function  : Token name, List<Token> params, List<Stmt> body"
+                "Function  : Token name, List<Token> params, List<Stmt> body",
+                "Return : Token keyword, Expr value"
         ));
     }
 

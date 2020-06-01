@@ -22,7 +22,11 @@ class SLoxFunction implements SLoxCallable{
             environment.define((declaration.params.get(i).lexeme), arguments.get(i));
         }
 
-        interpreter.executeBlockStmt(declaration.body, environment);
+        try {
+            interpreter.executeBlockStmt(declaration.body, environment);
+        } catch(Return returnValue){
+            return returnValue.value;
+        }
         return  null;
     }
 

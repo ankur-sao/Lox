@@ -110,6 +110,15 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>{
 
 
     @Override
+    public Void visitReturnStmt(Stmt.Return stmt){
+        Object returnValue = null;
+        if (stmt.value != null){
+            returnValue  = evaluate(stmt.value);
+        }
+        throw new Return(returnValue);
+    }
+
+    @Override
     public Object visitBinaryExpr(Expr.Binary expr){
         Object leftValue =  evaluate(expr.left);
         Object rightValue = evaluate(expr.right);
